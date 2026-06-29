@@ -62,6 +62,8 @@ with sync_playwright() as p:
 - Uses captured Playwright cookies for authenticated `yt-dlp` downloads from Instagram and YouTube when needed.
 - Processes up to 3 pending rows per run.
 - Uploads ready rows to YouTube first, waits 3-15 minutes, then uploads to Instagram.
+- Uploads pending rows directly by default because service accounts cannot store files in normal My Drive folders.
+- Set `DRIVE_STAGING_ENABLED` to `true` only if your `DRIVE_FOLDER_ID` belongs to a Google Workspace Shared Drive.
 - Uses human-like typing, pauses, and Chromium automation-control hardening.
 - Stops the workflow if YouTube or Instagram cookies are missing or expired.
 - Refreshes `YT_COOKIES_JSON` and `IG_COOKIES_JSON` secrets after successful uploads when `GH_PAT` is present.

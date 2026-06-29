@@ -59,6 +59,7 @@ jobs:
           GOOGLE_APPLICATION_CREDENTIALS: .secrets/sa.json
           GH_PAT: ${{ secrets.GH_PAT }}
           COOKIE_REFRESH_ENABLED: 'true'
+          DRIVE_STAGING_ENABLED: 'false'
         run: python -m pipeline.main
 
       - name: Upload logs on failure
