@@ -58,7 +58,8 @@ with sync_playwright() as p:
 
 ## Runtime Behavior
 
-- Runs twice daily on GitHub Actions with a randomized 0-25 minute workflow jitter.
+- Runs twice daily on GitHub Actions with a randomized 0-7 minute workflow jitter.
+- Uses captured Playwright cookies for authenticated `yt-dlp` downloads from Instagram and YouTube when needed.
 - Processes up to 3 pending rows per run.
 - Uploads ready rows to YouTube first, waits 3-15 minutes, then uploads to Instagram.
 - Uses human-like typing, pauses, and Chromium automation-control hardening.
@@ -72,4 +73,3 @@ pip install -r requirements.txt
 playwright install chromium
 python -m pipeline.main
 ```
-

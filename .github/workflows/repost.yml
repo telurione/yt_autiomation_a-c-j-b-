@@ -19,9 +19,9 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Random jitter (0-25 min)
+      - name: Random jitter (0-7 min)
         run: |
-          DELAY=$((RANDOM % 1500))
+          DELAY=$((RANDOM % 420))
           echo "Sleeping ${DELAY}s for anti-pattern jitter..."
           sleep $DELAY
 
@@ -70,4 +70,3 @@ jobs:
             *.log
             screenshots/
           retention-days: 7
-
