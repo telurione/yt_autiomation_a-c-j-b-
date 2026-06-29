@@ -1,0 +1,73 @@
+name: Auto Repost Pipeline
+
+on:
+  schedule:
+    - cron: '17 9 * * *'
+    - cron: '38 20 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: repost-pipeline
+  cancel-in-progress: false
+
+jobs:
+  repost:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Random jitter (0-25 min)
+        run: |
+          DELAY=$((RANDOM % 1500))
+          echo "Sleeping ${DELAY}s for anti-pattern jitter..."
+          sleep $DELAY
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install system tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Install Python deps
+        run: |
+          pip install -r requirements.txt
+          playwright install chromium --with-deps
+
+      - name: Write secrets to disk
+        env:
+          GOOGLE_SA_KEY: ${{ secrets.GOOGLE_SA_KEY }}
+          YT_COOKIES_JSON: ${{ secrets.YT_COOKIES_JSON }}
+          IG_COOKIES_JSON: ${{ secrets.IG_COOKIES_JSON }}
+        run: |
+          mkdir -p .secrets
+          printf '%s' "$GOOGLE_SA_KEY" > .secrets/sa.json
+          printf '%s' "$YT_COOKIES_JSON" > .secrets/yt_cookies.json
+          printf '%s' "$IG_COOKIES_JSON" > .secrets/ig_cookies.json
+
+      - name: Run pipeline
+        env:
+          SHEET_ID: ${{ secrets.SHEET_ID }}
+          DRIVE_FOLDER_ID: ${{ secrets.DRIVE_FOLDER_ID }}
+          GOOGLE_APPLICATION_CREDENTIALS: .secrets/sa.json
+          GH_PAT: ${{ secrets.GH_PAT }}
+          COOKIE_REFRESH_ENABLED: 'true'
+        run: python -m pipeline.main
+
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: failure-logs
+          path: |
+            *.log
+            screenshots/
+          retention-days: 7
+
