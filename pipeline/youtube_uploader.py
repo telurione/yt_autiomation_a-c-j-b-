@@ -48,6 +48,23 @@ DASHBOARD_UPLOAD_SELECTORS = [
     "a:has-text('Upload videos')",
 ]
 
+PUBLIC_VISIBILITY_SELECTORS = [
+    "tp-yt-paper-radio-button[name='PUBLIC']",
+    "#privacy-radios tp-yt-paper-radio-button:has-text('Public')",
+    "ytcp-video-visibility-select tp-yt-paper-radio-button:has-text('Public')",
+    "tp-yt-paper-radio-button:has-text('Public')",
+    "div[role='radio']:has-text('Public')",
+]
+
+FINAL_PUBLISH_SELECTORS = [
+    "#publish-button",
+    "ytcp-button:has-text('Publish')",
+    "button:has-text('Publish')",
+    "#done-button",
+    "ytcp-button:has-text('Done')",
+    "button:has-text('Done')",
+]
+
 
 def _assert_logged_in(page) -> None:
     if re.search(r"/signin|accounts\.google\.com", page.url):
@@ -151,6 +168,26 @@ def _open_upload_dialog(page, video_path: str) -> None:
     input_box.set_input_files(video_path)
 
 
+def _select_public_visibility(page) -> None:
+    click_first(page, PUBLIC_VISIBILITY_SELECTORS, timeout=45000)
+    human_gap(2, 5)
+
+    selected = page.locator(
+        "tp-yt-paper-radio-button[name='PUBLIC'][aria-checked='true'], "
+        "tp-yt-paper-radio-button:has-text('Public')[aria-checked='true'], "
+        "div[role='radio']:has-text('Public')[aria-checked='true']"
+    ).first
+    try:
+        selected.wait_for(state="visible", timeout=5000)
+        log.info("YouTube visibility set to Public.")
+    except PlaywrightTimeoutError:
+        log.info("Could not verify Public radio state; continuing after click.")
+
+
+def _click_final_publish(page) -> None:
+    click_first(page, FINAL_PUBLISH_SELECTORS, timeout=60000)
+
+
 def publish(video_path: str, title: str, desc: str, hashtags: str) -> None:
     ensure_cookie_file(COOKIE_PATH, "YouTube")
     full_desc = f"{desc or ''}\n\n{hashtags or ''}".strip()
@@ -185,9 +222,9 @@ def publish(video_path: str, title: str, desc: str, hashtags: str) -> None:
                 click_first(page, ["#next-button", "ytcp-button:has-text('Next')"], timeout=30000)
                 human_gap(4, 8)
 
-            click_first(page, ["text=Public", "tp-yt-paper-radio-button:has-text('Public')"], timeout=30000)
+            _select_public_visibility(page)
             human_gap()
-            click_first(page, ["#done-button", "ytcp-button:has-text('Done')"], timeout=30000)
+            _click_final_publish(page)
             human_gap(5, 10)
 
             ctx.storage_state(path=COOKIE_PATH)
