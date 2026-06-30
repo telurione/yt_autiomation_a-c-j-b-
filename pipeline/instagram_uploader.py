@@ -1,5 +1,6 @@
 import logging
 import re
+import time
 
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError, sync_playwright
 
@@ -73,6 +74,63 @@ def _click_share(page) -> None:
         click_visible_text(page, "Share", timeout=30000)
 
 
+def _has_visible(page, selectors: list[str], timeout: int = 500) -> bool:
+    for selector in selectors:
+        try:
+            locator = page.locator(selector).first
+            if locator.count() and locator.is_visible(timeout=timeout):
+                return True
+        except Exception:
+            continue
+    return False
+
+
+def _wait_for_share_complete(page, timeout: int = 150000) -> None:
+    success_selectors = [
+        "text=/Your reel has been shared/i",
+        "text=/Your post has been shared/i",
+        "text=/Reel shared/i",
+        "text=/Post shared/i",
+    ]
+    error_selectors = [
+        "text=/couldn't share/i",
+        "text=/couldn't post/i",
+        "text=/try again/i",
+        "text=/something went wrong/i",
+        "text=/error/i",
+    ]
+    compose_selectors = [
+        "text=/New reel/i",
+        "text=/New post/i",
+    ]
+    share_selectors = [
+        "div[role='button']:has-text('Share')",
+        "button:has-text('Share')",
+        "span:has-text('Share')",
+    ]
+
+    deadline = time.time() + (timeout / 1000)
+    while time.time() < deadline:
+        _assert_logged_in(page)
+
+        if _has_visible(page, success_selectors):
+            log.info("Instagram reported the upload as shared.")
+            return
+
+        if _has_visible(page, error_selectors):
+            raise RuntimeError("Instagram showed an upload error after Share.")
+
+        modal_open = _has_visible(page, compose_selectors, timeout=300)
+        share_visible = _has_visible(page, share_selectors, timeout=300)
+        if not modal_open and not share_visible:
+            log.info("Instagram compose dialog closed after Share; treating upload as complete.")
+            return
+
+        time.sleep(2)
+
+    raise PlaywrightTimeoutError("Instagram did not confirm that the upload was shared.")
+
+
 def publish(video_path: str, caption: str, hashtags: str) -> None:
     ensure_cookie_file(COOKIE_PATH, "Instagram")
     full_caption = f"{caption or ''}\n\n{hashtags or ''}".strip()
@@ -134,17 +192,8 @@ def publish(video_path: str, caption: str, hashtags: str) -> None:
             human_gap(4, 10)
 
             _click_share(page)
-            human_gap(15, 30)
-
-            success = page.locator("text=/Your reel has been shared|Your post has been shared|shared/i").first
-            try:
-                success.wait_for(state="visible", timeout=60000)
-            except PlaywrightTimeoutError:
-                log.info("Instagram success text not detected; checking for login or error state.")
-                _assert_logged_in(page)
-                error_text = page.locator("text=/couldn't|try again|error/i").first
-                if error_text.count() and error_text.is_visible(timeout=1000):
-                    raise RuntimeError("Instagram showed an upload error.")
+            human_gap(5, 10)
+            _wait_for_share_complete(page)
 
             if re.search(r"/accounts/login", page.url):
                 raise CookieAuthError("Instagram cookies expired during upload.")
