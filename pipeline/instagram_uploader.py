@@ -90,6 +90,41 @@ def _click_share(page) -> None:
         click_visible_text(page, "Share", timeout=30000)
 
 
+def _open_post_upload_dialog(page) -> None:
+    _debug_screenshot(page, "instagram-before-create-click")
+    click_first(
+        page,
+        [
+            "svg[aria-label='New post']",
+            "svg[aria-label='Create']",
+            "a[href='/create/select/']",
+            "div[role='button']:has-text('Create')",
+            "span:has-text('Create')",
+            "text=Create",
+        ],
+        timeout=30000,
+    )
+    human_gap(2, 5)
+    _debug_screenshot(page, "instagram-after-create-click")
+
+    if page.locator("input[type='file']").count():
+        return
+
+    click_first(
+        page,
+        [
+            "a[href='/create/select/']",
+            "div[role='button']:has-text('Post')",
+            "button:has-text('Post')",
+            "span:has-text('Post')",
+            "text=Post",
+        ],
+        timeout=15000,
+    )
+    human_gap(2, 5)
+    _debug_screenshot(page, "instagram-after-post-click")
+
+
 def _has_visible(page, selectors: list[str], timeout: int = 500) -> bool:
     for selector in selectors:
         try:
@@ -148,20 +183,10 @@ def publish(video_path: str, caption: str, hashtags: str) -> None:
             _dismiss_interruptions(page)
             _debug_screenshot(page, "instagram-home")
 
-            click_first(
-                page,
-                [
-                    "svg[aria-label='New post']",
-                    "svg[aria-label='Create']",
-                    "a[href='/create/select/']",
-                    "div[role='button']:has-text('Create')",
-                    "text=Create",
-                ],
-                timeout=30000,
-            )
-            human_gap(3, 8)
+            _open_post_upload_dialog(page)
 
             upload_input = page.locator("input[type='file']").first
+            _debug_screenshot(page, "instagram-before-file-input")
             upload_input.wait_for(state="attached", timeout=30000)
             upload_input.set_input_files(video_path)
             human_gap(12, 22)
