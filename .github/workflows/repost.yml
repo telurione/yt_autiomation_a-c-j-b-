@@ -62,12 +62,13 @@ jobs:
           DRIVE_STAGING_ENABLED: 'false'
         run: python -m pipeline.main
 
-      - name: Upload logs on failure
-        if: failure()
+      - name: Upload debug artifacts
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: failure-logs
+          name: debug-artifacts
           path: |
             *.log
             screenshots/
+          if-no-files-found: ignore
           retention-days: 7
