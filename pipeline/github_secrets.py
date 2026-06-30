@@ -49,6 +49,13 @@ def update_secret_from_file(secret_name: str, file_path: str) -> bool:
 
 
 def refresh_cookie_secrets() -> None:
-    update_secret_from_file("YT_COOKIES_JSON", ".secrets/yt_cookies.json")
-    update_secret_from_file("IG_COOKIES_JSON", ".secrets/ig_cookies.json")
+    refresh_youtube_cookies()
+    refresh_instagram_cookies()
 
+
+def refresh_youtube_cookies() -> bool:
+    return update_secret_from_file("YT_COOKIES_JSON", ".secrets/yt_cookies.json")
+
+
+def refresh_instagram_cookies() -> bool:
+    return update_secret_from_file("IG_COOKIES_JSON", ".secrets/ig_cookies.json")

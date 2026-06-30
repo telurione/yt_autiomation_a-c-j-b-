@@ -41,9 +41,10 @@ def human_gap(lo: int = 180, hi: int = 900) -> None:
 def publish_local_path(row: sheets.Row, local_path: str, mark_uploaded: bool = True) -> None:
     sheets.update_status(row, "uploading")
     youtube_uploader.publish(local_path, row.yt_title, row.yt_desc, row.hashtags)
+    github_secrets.refresh_youtube_cookies()
     human_gap()
     instagram_uploader.publish(local_path, row.ig_caption, row.hashtags)
-    github_secrets.refresh_cookie_secrets()
+    github_secrets.refresh_instagram_cookies()
     if mark_uploaded:
         sheets.mark_uploaded(row)
 
