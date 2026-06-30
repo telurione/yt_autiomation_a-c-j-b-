@@ -98,6 +98,10 @@ def fetch(url: str) -> str:
         "mp4",
         "--max-filesize",
         "300M",
+        "--js-runtimes",
+        "deno",
+        "--remote-components",
+        "ejs:npm",
         "-o",
         out_path,
     ]

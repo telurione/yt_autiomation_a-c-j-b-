@@ -1,8 +1,7 @@
-yt-dlp>=2024.1.1
+yt-dlp[default]>=2024.1.1
 playwright>=1.40
 gspread>=6.0
 google-api-python-client>=2.0
 google-auth>=2.0
 ffmpeg-python>=0.2
 python-dotenv>=1.0
-
