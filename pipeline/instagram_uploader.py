@@ -6,6 +6,7 @@ from playwright.sync_api import TimeoutError as PlaywrightTimeoutError, sync_pla
 from pipeline.browser_utils import (
     BROWSER_ARGS,
     click_first,
+    click_visible_text,
     ensure_cookie_file,
     human_gap,
     human_type,
@@ -57,15 +58,19 @@ def _click_next(page) -> None:
 
 
 def _click_share(page) -> None:
-    click_first(
-        page,
-        [
-            "div[role='button']:has-text('Share')",
-            "button:has-text('Share')",
-            "text=Share",
-        ],
-        timeout=30000,
-    )
+    try:
+        click_first(
+            page,
+            [
+                "div[role='button']:has-text('Share')",
+                "button:has-text('Share')",
+                "span:has-text('Share')",
+                "xpath=//*[normalize-space()='Share' and not(self::title)]",
+            ],
+            timeout=10000,
+        )
+    except PlaywrightTimeoutError:
+        click_visible_text(page, "Share", timeout=30000)
 
 
 def publish(video_path: str, caption: str, hashtags: str) -> None:
@@ -151,4 +156,3 @@ def publish(video_path: str, caption: str, hashtags: str) -> None:
             raise
         finally:
             browser.close()
-

@@ -34,8 +34,16 @@ def update_secret_from_file(secret_name: str, file_path: str) -> bool:
 
     env = os.environ.copy()
     env["GH_TOKEN"] = token
-    cmd = ["gh", "secret", "set", secret_name, "--body-file", file_path, "--repo", repo]
-    result = subprocess.run(cmd, check=False, env=env, capture_output=True, text=True)
+    cmd = ["gh", "secret", "set", secret_name, "--repo", repo]
+    with open(file_path, "rb") as fh:
+        result = subprocess.run(
+            cmd,
+            check=False,
+            env=env,
+            stdin=fh,
+            capture_output=True,
+            text=True,
+        )
     if result.returncode != 0:
         log.warning(
             "Failed to refresh %s via gh secret set: %s",

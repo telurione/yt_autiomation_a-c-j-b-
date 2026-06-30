@@ -72,9 +72,35 @@ def click_first(page: Page, selectors: list[str], timeout: int = 5000) -> str:
     raise PlaywrightTimeoutError(f"No selector matched: {selectors}. Last error: {last_error}")
 
 
+def click_visible_text(page: Page, text: str, timeout: int = 5000) -> None:
+    deadline = time.time() + (timeout / 1000)
+    last_error = None
+    while time.time() < deadline:
+        matches = page.get_by_text(text, exact=True)
+        try:
+            count = matches.count()
+        except Exception as exc:
+            last_error = exc
+            count = 0
+
+        for i in range(count):
+            candidate = matches.nth(i)
+            try:
+                if candidate.is_visible(timeout=500):
+                    candidate.click(timeout=2000)
+                    return
+            except Exception as exc:
+                last_error = exc
+
+        time.sleep(0.5)
+
+    raise PlaywrightTimeoutError(
+        f"No visible exact text matched {text!r}. Last error: {last_error}"
+    )
+
+
 def fill_contenteditable(locator: Locator, text: str) -> None:
     locator.click()
     locator.page.keyboard.press("Control+A")
     locator.page.keyboard.press("Delete")
     human_type(locator, text)
-
