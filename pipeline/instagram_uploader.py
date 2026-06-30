@@ -21,6 +21,22 @@ log = logging.getLogger(__name__)
 COOKIE_PATH = ".secrets/ig_cookies.json"
 
 
+def _page_state(page) -> str:
+    try:
+        title = page.title()
+    except Exception:
+        title = "<unavailable>"
+    return f"url={page.url!r}, title={title!r}"
+
+
+def _debug_screenshot(page, label: str) -> None:
+    try:
+        path = screenshot(page, label)
+        log.info("Instagram debug screenshot saved to %s. %s", path, _page_state(page))
+    except Exception as exc:
+        log.info("Could not save Instagram debug screenshot %s: %s", label, exc)
+
+
 def _assert_logged_in(page) -> None:
     if "/accounts/login" in page.url:
         raise CookieAuthError("Instagram cookies are expired; capture fresh ig_cookies.json.")
@@ -99,16 +115,6 @@ def _wait_for_share_complete(page, timeout: int = 150000) -> None:
         "text=/something went wrong/i",
         "text=/error/i",
     ]
-    compose_selectors = [
-        "text=/New reel/i",
-        "text=/New post/i",
-    ]
-    share_selectors = [
-        "div[role='button']:has-text('Share')",
-        "button:has-text('Share')",
-        "span:has-text('Share')",
-    ]
-
     deadline = time.time() + (timeout / 1000)
     while time.time() < deadline:
         _assert_logged_in(page)
@@ -120,14 +126,9 @@ def _wait_for_share_complete(page, timeout: int = 150000) -> None:
         if _has_visible(page, error_selectors):
             raise RuntimeError("Instagram showed an upload error after Share.")
 
-        modal_open = _has_visible(page, compose_selectors, timeout=300)
-        share_visible = _has_visible(page, share_selectors, timeout=300)
-        if not modal_open and not share_visible:
-            log.info("Instagram compose dialog closed after Share; treating upload as complete.")
-            return
-
         time.sleep(2)
 
+    _debug_screenshot(page, "instagram-share-confirm-timeout")
     raise PlaywrightTimeoutError("Instagram did not confirm that the upload was shared.")
 
 
@@ -145,6 +146,7 @@ def publish(video_path: str, caption: str, hashtags: str) -> None:
             human_gap(5, 11)
             _assert_logged_in(page)
             _dismiss_interruptions(page)
+            _debug_screenshot(page, "instagram-home")
 
             click_first(
                 page,
@@ -163,6 +165,7 @@ def publish(video_path: str, caption: str, hashtags: str) -> None:
             upload_input.wait_for(state="attached", timeout=30000)
             upload_input.set_input_files(video_path)
             human_gap(12, 22)
+            _debug_screenshot(page, "instagram-after-file-selected")
 
             try:
                 click_first(
@@ -180,8 +183,10 @@ def publish(video_path: str, caption: str, hashtags: str) -> None:
 
             _click_next(page)
             human_gap(4, 9)
+            _debug_screenshot(page, "instagram-after-first-next")
             _click_next(page)
             human_gap(4, 9)
+            _debug_screenshot(page, "instagram-caption-screen")
 
             caption_box = page.locator(
                 "div[aria-label='Write a caption...'], textarea[aria-label='Write a caption...'], div[contenteditable='true']"
@@ -190,9 +195,11 @@ def publish(video_path: str, caption: str, hashtags: str) -> None:
             caption_box.click()
             human_type(caption_box, full_caption)
             human_gap(4, 10)
+            _debug_screenshot(page, "instagram-before-share")
 
             _click_share(page)
             human_gap(5, 10)
+            _debug_screenshot(page, "instagram-after-share-click")
             _wait_for_share_complete(page)
 
             if re.search(r"/accounts/login", page.url):
@@ -201,7 +208,7 @@ def publish(video_path: str, caption: str, hashtags: str) -> None:
             ctx.storage_state(path=COOKIE_PATH)
         except Exception:
             shot = screenshot(page, "instagram-upload-failure")
-            log.exception("Instagram upload failed. Screenshot saved to %s", shot)
+            log.exception("Instagram upload failed. %s Screenshot saved to %s", _page_state(page), shot)
             raise
         finally:
             browser.close()
