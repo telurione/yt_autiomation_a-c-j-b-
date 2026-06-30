@@ -36,25 +36,14 @@ Add your square logo as `assets/watermark.png`. It is rendered as a tiny square 
 
 Run this locally and paste the resulting JSON files into GitHub Secrets:
 
-```python
-from playwright.sync_api import sync_playwright
-
-PLATFORMS = {
-    "yt": "https://studio.youtube.com",
-    "ig": "https://www.instagram.com/accounts/login/",
-}
-
-with sync_playwright() as p:
-    for name, url in PLATFORMS.items():
-        browser = p.chromium.launch(headless=False)
-        ctx = browser.new_context()
-        page = ctx.new_page()
-        page.goto(url)
-        input(f"[{name}] Log in manually, complete any 2FA, then press Enter...")
-        ctx.storage_state(path=f"{name}_cookies.json")
-        browser.close()
-        print(f"Saved {name}_cookies.json")
+```bash
+pip install playwright
+playwright install chromium
+python tools/capture_cookies.py yt
+python tools/capture_cookies.py ig
 ```
+
+For YouTube, make sure `https://studio.youtube.com` opens to the channel dashboard before pressing Enter. If Google shows "Choose an account" or "Signed out", finish sign-in first.
 
 ## Runtime Behavior
 
