@@ -36,7 +36,7 @@ def apply_preset(input_path: str) -> str:
         "[1:v]scale=96:96:force_original_aspect_ratio=decrease,"
         "pad=96:96:(ow-iw)/2:(oh-ih)/2:color=black@0.0,format=rgba[wm];"
         "[v0][wm]overlay=x=W-w-36:y=H-h-36[vout];"
-        "[vout]setpts=PTS/1.1[vfinal]"
+        "[vout]setpts=PTS/1.3[vfinal]"
     )
 
     cmd = [
@@ -58,7 +58,7 @@ def apply_preset(input_path: str) -> str:
                 "-map",
                 "0:a:0",
                 "-filter:a",
-                "atempo=1.1",
+                "atempo=1.3",
                 "-c:a",
                 "aac",
                 "-b:a",
