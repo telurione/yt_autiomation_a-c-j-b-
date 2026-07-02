@@ -32,7 +32,7 @@ def _is_drive_quota_error(exc: Exception) -> bool:
     )
 
 
-def human_gap(lo: int = 180, hi: int = 900) -> None:
+def human_gap(lo: int = 60, hi: int = 300) -> None:
     delay = random.randint(lo, hi)
     log.info("Inter-upload gap: %ss", delay)
     time.sleep(delay)
